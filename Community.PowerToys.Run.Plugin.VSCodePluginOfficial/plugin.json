@@ -1,0 +1,15 @@
+{
+  "ID": "F70451FFFA5F4F2686B8AB6888E1440B",
+  "ActionKeyword": "vsc",
+  "IsGlobal": false,
+  "Name": "VSCode",
+  "Version": "1.0.0",
+  "Author": "Vincent0201Ip",
+  "Description": "Manage VS Code projects and SSH connections",
+  "Language": "csharp",
+  "Website": "https://github.com/Vincent0201Ip/PowerToys-VSCode-Plugin",
+  "ExecuteFileName": "Community.PowerToys.Run.Plugin.VSCodePluginOfficial.dll",
+  "IcoPathDark": "Images\\vscode.dark.png",
+  "IcoPathLight": "Images\\vscode.light.png",
+  "DynamicLoading": false
+}
