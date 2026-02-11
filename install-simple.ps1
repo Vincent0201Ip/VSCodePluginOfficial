@@ -1,7 +1,7 @@
 # Simple Install Script
 Write-Host "=== Installing VSCode Plugin ===" -ForegroundColor Cyan
 
-$sourceDir = ".\Community.PowerToys.Run.Plugin.VSCodePluginOfficial\bin\x64\Release\net9.0-windows10.0.26100.0"
+$sourceDir = ".\Community.PowerToys.Run.Plugin.VSCodePluginOfficial\bin\x64\Release\net9.0-windows"
 $targetDir = "$env:LOCALAPPDATA\Microsoft\PowerToys\PowerToys Run\Plugins\VSCode"
 
 Write-Host "`nStopping PowerToys..." -ForegroundColor Yellow

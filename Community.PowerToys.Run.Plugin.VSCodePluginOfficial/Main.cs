@@ -41,6 +41,7 @@ public class Main : IPlugin, IContextMenu, IDisposable
 
     private const string VSCodeKeyword = "vscode";
     private const string SSHKeyword = "ssh";
+    private const string OpenKeyword = "open";
     private readonly VSCodeProjectLoader _projectLoader;
     private readonly SSHConfigParser _sshParser;
 
@@ -101,26 +102,58 @@ public class Main : IPlugin, IContextMenu, IDisposable
     /// <returns>A filtered list of results matching the query.</returns>
     public List<Result> Query(Query query)
     {
-        // query.Search contains the text AFTER the action keyword
-        // For example: "vsc projects" -> query.Search = "projects"
-        var search = query.Search.ToLowerInvariant().Trim();
-        
-        // Check if user specified a sub-command
-        if (search.StartsWith(SSHKeyword))
+        try
         {
-            // User typed: vsc ssh <search>
-            return SearchSSHConnections(search.Substring(SSHKeyword.Length).Trim());
+            // query.Search contains the text AFTER the action keyword
+            // For example: "vsc projects" -> query.Search = "projects"
+            var search = query.Search.ToLowerInvariant().Trim();
+
+            // DEBUG: Log what we're searching for
+            System.Diagnostics.Debug.WriteLine($"[VSCode Plugin] Query.Search = '{query.Search}', search = '{search}'");
+            System.Diagnostics.Debug.WriteLine($"[VSCode Plugin] OpenKeyword = '{OpenKeyword}', SSHKeyword = '{SSHKeyword}', VSCodeKeyword = '{VSCodeKeyword}'");
+
+            // Check if user specified a sub-command
+            // Use exact match or "keyword " (with space) to avoid matching project names
+            if (search == SSHKeyword || search.StartsWith(SSHKeyword + " "))
+            {
+                // User typed: vsc ssh <search>
+                System.Diagnostics.Debug.WriteLine($"[VSCode Plugin] Matched SSH keyword");
+                return SearchSSHConnections(search.Substring(SSHKeyword.Length).Trim());
+            }
+            else if (search == OpenKeyword || search.StartsWith(OpenKeyword + " "))
+            {
+                // User typed: vsc open <anything>
+                // Show all recent projects and open selected one in PowerShell with opencode
+                System.Diagnostics.Debug.WriteLine($"[VSCode Plugin] Matched OPEN keyword - calling GetOpenInPowerShellResults()");
+                return GetOpenInPowerShellResults();
+            }
+            else if (search == VSCodeKeyword || search.StartsWith(VSCodeKeyword + " "))
+            {
+                // User typed: vsc vscode <search>
+                System.Diagnostics.Debug.WriteLine($"[VSCode Plugin] Matched VSCODE keyword");
+                return SearchVSCodeProjects(search.Substring(VSCodeKeyword.Length).Trim());
+            }
+            else
+            {
+                // User typed just: vsc <search>
+                // Default to searching VS Code projects
+                System.Diagnostics.Debug.WriteLine($"[VSCode Plugin] No keyword match - searching projects with term '{search}'");
+                return SearchVSCodeProjects(search);
+            }
         }
-        else if (search.StartsWith(VSCodeKeyword))
+        catch (Exception ex)
         {
-            // User typed: vsc vscode <search>
-            return SearchVSCodeProjects(search.Substring(VSCodeKeyword.Length).Trim());
-        }
-        else
-        {
-            // User typed just: vsc <search>
-            // Default to searching VS Code projects
-            return SearchVSCodeProjects(search);
+            System.Diagnostics.Debug.WriteLine($"[VSCode Plugin] ERROR in Query: {ex.Message}\n{ex.StackTrace}");
+            return new List<Result>
+            {
+                new Result
+                {
+                    Title = "Plugin Error",
+                    SubTitle = $"Error in Query: {ex.Message}",
+                    IcoPath = IconPath ?? "Images/vscode.dark.png",
+                    Action = _ => false
+                }
+            };
         }
     }
 
@@ -224,6 +257,84 @@ public class Main : IPlugin, IContextMenu, IDisposable
     }
 
     /// <summary>
+    /// Returns all recent projects for opening in PowerShell with opencode.
+    /// </summary>
+    /// <returns>A list of all recent VS Code projects.</returns>
+    private List<Result> GetOpenInPowerShellResults()
+    {
+        try
+        {
+            System.Diagnostics.Debug.WriteLine($"[VSCode Plugin] GetOpenInPowerShellResults() called");
+
+            var results = new List<Result>();
+
+            // Add a header result to confirm this feature is working
+            results.Add(new Result
+            {
+                Title = "🚀 Open in PowerShell Mode",
+                SubTitle = "Select a project below to open it in PowerShell with 'opencode' command",
+                IcoPath = IconPath ?? "Images/vscode.dark.png",
+                Score = 1000, // High score to appear at top
+                Action = _ => false
+            });
+
+            var projects = _projectLoader.LoadProjects();
+            System.Diagnostics.Debug.WriteLine($"[VSCode Plugin] Loaded {projects?.Count ?? 0} projects");
+
+            if (projects == null)
+            {
+                projects = new List<VSCodeProject>();
+            }
+
+            foreach (var project in projects.Where(p => p != null))
+            {
+                System.Diagnostics.Debug.WriteLine($"[VSCode Plugin] Adding project: {project.Name} - {project.Path}");
+                results.Add(new Result
+                {
+                    Title = project.Name,
+                    SubTitle = $"📂 Open in PowerShell: {project.Path}",
+                    IcoPath = IconPath ?? "Images/vscode.dark.png",
+                    Action = _ =>
+                    {
+                        return OpenInPowerShell(project);
+                    },
+                    ContextData = project
+                });
+            }
+
+            // If no projects found, show a message
+            if (results.Count == 1) // Only the header result
+            {
+                System.Diagnostics.Debug.WriteLine($"[VSCode Plugin] No projects found, showing message");
+                results.Add(new Result
+                {
+                    Title = "No VS Code projects found",
+                    SubTitle = "Open a folder in VS Code to see it here",
+                    IcoPath = IconPath ?? "Images/vscode.dark.png",
+                    Action = _ => false
+                });
+            }
+
+            System.Diagnostics.Debug.WriteLine($"[VSCode Plugin] Returning {results.Count} results");
+            return results;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[VSCode Plugin] ERROR in GetOpenInPowerShellResults: {ex.Message}\n{ex.StackTrace}");
+            return new List<Result>
+            {
+                new Result
+                {
+                    Title = "Error loading VS Code projects",
+                    SubTitle = $"{ex.GetType().Name}: {ex.Message}",
+                    IcoPath = IconPath ?? "Images/vscode.dark.png",
+                    Action = _ => false
+                }
+            };
+        }
+    }
+
+    /// <summary>
     /// Opens a VS Code project by launching VS Code with the specified path or URI.
     /// </summary>
     /// <param name="projectPath">The local path or remote URI of the project to open.</param>
@@ -291,6 +402,74 @@ public class Main : IPlugin, IContextMenu, IDisposable
         catch (Exception ex)
         {
             MessageBox.Show($"Failed to open SSH connection: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    /// <summary>
+    /// Opens a PowerShell window at the project directory and runs opencode.
+    /// </summary>
+    /// <param name="project">The VS Code project to open.</param>
+    /// <returns>True if successful, false otherwise.</returns>
+    private bool OpenInPowerShell(VSCodeProject project)
+    {
+        // Check if it's a remote project
+        if (project.Path.StartsWith("vscode-remote://", StringComparison.OrdinalIgnoreCase))
+        {
+            MessageBox.Show(
+                $"Remote projects are not supported for PowerShell opening.\n\n" +
+                $"Project: {project.Name}\n" +
+                $"Remote URI: {project.Path}\n\n" +
+                $"Please use the regular 'vsc' command to open remote projects in VS Code.",
+                "Remote Project Not Supported",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+            return false;
+        }
+
+        // Check if directory exists
+        if (!Directory.Exists(project.Path))
+        {
+            MessageBox.Show(
+                $"The project directory no longer exists.\n\n" +
+                $"Project: {project.Name}\n" +
+                $"Path: {project.Path}\n\n" +
+                $"The project may have been moved or deleted.",
+                "Directory Not Found",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+            return false;
+        }
+
+        try
+        {
+            // Escape single quotes in the path for PowerShell (replace ' with '')
+            var escapedPath = project.Path.Replace("'", "''");
+
+            // Build PowerShell command: cd to directory, then run opencode
+            // -NoExit keeps the window open after running commands
+            var command = $"cd '{escapedPath}'; opencode";
+            
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = "powershell.exe",
+                Arguments = $"-NoExit -Command \"{command}\"",
+                UseShellExecute = true
+            };
+            
+            Process.Start(startInfo);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                $"Failed to open PowerShell.\n\n" +
+                $"Error: {ex.Message}\n\n" +
+                $"Project: {project.Name}\n" +
+                $"Path: {project.Path}",
+                "Error Opening PowerShell",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+            return false;
         }
     }
 
