@@ -38,17 +38,7 @@ A powerful PowerToys Run plugin for quickly opening VS Code projects and managin
 
 ## 📦 Installation
 
-### Option 1: From Release (Recommended)
-
-1. Download the latest release from the [Releases](https://github.com/Vincent0201Ip/PowerToys-VSCode-Plugin/releases) page
-2. Extract the ZIP file
-3. Copy all files to:
-   ```
-   %LOCALAPPDATA%\Microsoft\PowerToys\PowerToys Run\Plugins\VSCode\
-   ```
-4. Restart PowerToys Run (or PowerToys completely)
-
-### Option 2: Build from Source
+### Option 1: Build from Source
 
 See [Building from Source](#building-from-source) section below.
 
