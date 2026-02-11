@@ -47,8 +47,15 @@ namespace Community.PowerToys.Run.Plugin.VSCodePluginOfficial.Services
                 // Ignore and continue
             }
 
+            // Remove duplicates based on path (case-insensitive)
+            var uniqueProjects = projects
+                .GroupBy(p => p.Path.ToLowerInvariant())
+                .Select(g => g.OrderByDescending(p => p.LastOpened).First())
+                .OrderByDescending(p => p.LastOpened)
+                .ToList();
+
             _cachedProjects.Clear();
-            _cachedProjects.AddRange(projects.OrderByDescending(p => p.LastOpened));
+            _cachedProjects.AddRange(uniqueProjects);
             _lastCacheUpdate = DateTime.Now;
 
             return _cachedProjects;
