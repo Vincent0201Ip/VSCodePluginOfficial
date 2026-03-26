@@ -68,9 +68,45 @@ dotnet build -c Release -p:Platform=x64 -p:TreatWarningsAsErrors=true
 ## Installation & Deployment
 
 ```powershell
-.\install-simple.ps1    # Install plugin to PowerToys
+.\install.ps1           # Universal installer (recommended)
+.\install-simple.ps1    # Install plugin to PowerToys (requires pre-built)
 .\package.ps1           # Create release packages
 ```
+
+### Universal Installer (install.ps1)
+
+The universal installer is the recommended installation method. It works on any Windows system and handles all dependencies automatically:
+
+- **Auto-detects architecture** (x64/ARM64)
+- **Checks/installs PowerToys** (with user prompt)
+- **Hybrid approach**: Downloads pre-built release → falls back to build
+- **Auto-installs .NET 9.0 SDK** when building from source
+- **Installs plugin and restarts PowerToys**
+
+**Usage:**
+```powershell
+# Basic installation
+.\install.ps1
+
+# Force build from source
+.\install.ps1 -ForceBuild
+
+# Skip PowerToys check (useful for CI/CD)
+.\install.ps1 -SkipPowerToysCheck
+
+# Skip PowerToys restart
+.\install.ps1 -SkipRestart
+```
+
+### Quick Install (install-simple.ps1)
+
+For quick installation when you have pre-built files:
+
+```powershell
+.\install-simple.ps1
+```
+
+This script assumes you've already built the plugin and copies the x64 release to PowerToys.
 
 ## Code Style Guidelines
 

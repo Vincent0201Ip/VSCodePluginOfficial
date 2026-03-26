@@ -493,42 +493,75 @@ public class Main : IPlugin, IContextMenu, IDisposable
     }
 
     /// <summary>
-    /// Attempts to find the VS Code executable path by checking common installation locations.
+    /// Attempts to find VS Code executable path by checking common installation locations.
+    /// Supports VS Code Stable, Insiders, and VSCodium.
     /// </summary>
     /// <returns>The path to VS Code executable, or null if not found.</returns>
     private string GetVSCodePath()
     {
         var possiblePaths = new[]
         {
+            // VS Code Stable
             Environment.ExpandEnvironmentVariables(@"%ProgramFiles%\Microsoft VS Code\Code.exe"),
             Environment.ExpandEnvironmentVariables(@"%ProgramFiles(x86)%\Microsoft VS Code\Code.exe"),
             Environment.ExpandEnvironmentVariables(@"%LocalAppData%\Programs\Microsoft VS Code\Code.exe"),
+            
+            // VS Code Insiders
+            Environment.ExpandEnvironmentVariables(@"%ProgramFiles%\Microsoft VS Code - Insiders\Code - Insiders.exe"),
+            Environment.ExpandEnvironmentVariables(@"%ProgramFiles(x86)%\Microsoft VS Code - Insiders\Code - Insiders.exe"),
+            Environment.ExpandEnvironmentVariables(@"%LocalAppData%\Programs\Microsoft VS Code - Insiders\Code - Insiders.exe"),
+            
+            // VSCodium
+            Environment.ExpandEnvironmentVariables(@"%ProgramFiles%\VSCodium\VSCodium.exe"),
+            Environment.ExpandEnvironmentVariables(@"%ProgramFiles(x86)%\VSCodium\VSCodium.exe"),
+            Environment.ExpandEnvironmentVariables(@"%LocalAppData%\Programs\VSCodium\VSCodium.exe"),
+            
+            // Portable/custom installations
             Environment.ExpandEnvironmentVariables(@"%UserProfile%\.vscode\bin\code.cmd")
         };
-
+ 
         // First check known installation paths
         var foundPath = possiblePaths.FirstOrDefault(File.Exists);
         if (foundPath != null)
         {
             return foundPath;
         }
-
+ 
         // Try to find 'code' command in PATH
         var pathDirs = Environment.GetEnvironmentVariable("PATH")?.Split(';') ?? Array.Empty<string>();
         foreach (var dir in pathDirs)
         {
             try
             {
-                var codePath = Path.Combine(dir.Trim(), "code.exe");
+                var trimmedDir = dir.Trim();
+                if (string.IsNullOrEmpty(trimmedDir))
+                    continue;
+                
+                // Check for VS Code Stable
+                var codePath = Path.Combine(trimmedDir, "Code.exe");
                 if (File.Exists(codePath))
                 {
                     return codePath;
                 }
                 
-                var codeCmdPath = Path.Combine(dir.Trim(), "code.cmd");
+                var codeCmdPath = Path.Combine(trimmedDir, "code.cmd");
                 if (File.Exists(codeCmdPath))
                 {
                     return codeCmdPath;
+                }
+                
+                // Check for VS Code Insiders
+                var codeInsidersPath = Path.Combine(trimmedDir, "Code - Insiders.exe");
+                if (File.Exists(codeInsidersPath))
+                {
+                    return codeInsidersPath;
+                }
+                
+                // Check for VSCodium
+                var vscodiumPath = Path.Combine(trimmedDir, "VSCodium.exe");
+                if (File.Exists(vscodiumPath))
+                {
+                    return vscodiumPath;
                 }
             }
             catch
@@ -537,7 +570,7 @@ public class Main : IPlugin, IContextMenu, IDisposable
                 continue;
             }
         }
-
+  
         // VS Code not found
         return null;
     }

@@ -10,6 +10,7 @@ namespace Community.PowerToys.Run.Plugin.VSCodePluginOfficial.Services
     /// <summary>
     /// Service for loading VS Code project information from workspace storage.
     /// Supports both local and remote (SSH) projects with caching for improved performance.
+    /// Supports multiple VS Code variants: Stable, Insiders, and VSCodium.
     /// </summary>
     public class VSCodeProjectLoader
     {
@@ -17,7 +18,15 @@ namespace Community.PowerToys.Run.Plugin.VSCodePluginOfficial.Services
         private readonly List<VSCodeProject> _cachedProjects = new();
         private DateTime _lastCacheUpdate = DateTime.MinValue;
         private const int CacheValidityMinutes = 5;
-
+        
+        // VS Code variants to check (in priority order)
+        private readonly string[] _vsCodeVariants =
+        {
+            "Code",              // VS Code Stable
+            "Code - Insiders",  // VS Code Insiders
+            "VSCodium"          // VSCodium
+        };
+ 
         public VSCodeProjectLoader()
         {
             _appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
@@ -26,6 +35,7 @@ namespace Community.PowerToys.Run.Plugin.VSCodePluginOfficial.Services
         /// <summary>
         /// Loads all VS Code projects from workspace storage.
         /// Results are cached for 5 minutes to improve performance.
+        /// Checks all VS Code variants (Stable, Insiders, VSCodium) and merges results.
         /// </summary>
         /// <returns>A list of VS Code projects, sorted by last opened date (most recent first).</returns>
         public List<VSCodeProject> LoadProjects()
@@ -34,38 +44,43 @@ namespace Community.PowerToys.Run.Plugin.VSCodePluginOfficial.Services
             {
                 return _cachedProjects;
             }
-
+ 
             var projects = new List<VSCodeProject>();
-
-            // Load from workspace storage (works reliably)
-            try
+ 
+            // Load from workspace storage for all VS Code variants
+            foreach (var variant in _vsCodeVariants)
             {
-                projects.AddRange(LoadFromWorkspaceStorage());
+                try
+                {
+                    var variantProjects = LoadFromWorkspaceStorage(variant);
+                    projects.AddRange(variantProjects);
+                }
+                catch (Exception)
+                {
+                    // Ignore errors and continue with next variant
+                }
             }
-            catch (Exception)
-            {
-                // Ignore and continue
-            }
-
+ 
             // Remove duplicates based on path (case-insensitive)
+            // Keep the most recent version of each project
             var uniqueProjects = projects
                 .GroupBy(p => p.Path.ToLowerInvariant())
                 .Select(g => g.OrderByDescending(p => p.LastOpened).First())
                 .OrderByDescending(p => p.LastOpened)
                 .ToList();
-
+ 
             _cachedProjects.Clear();
             _cachedProjects.AddRange(uniqueProjects);
             _lastCacheUpdate = DateTime.Now;
-
+ 
             return _cachedProjects;
         }
 
-        private List<VSCodeProject> LoadFromWorkspaceStorage()
+        private List<VSCodeProject> LoadFromWorkspaceStorage(string variant)
         {
             var projects = new List<VSCodeProject>();
-            var workspacePath = Path.Combine(_appDataPath, "Code", "User", "workspaceStorage");
-
+            var workspacePath = Path.Combine(_appDataPath, variant, "User", "workspaceStorage");
+ 
             if (!Directory.Exists(workspacePath))
             {
                 return projects;

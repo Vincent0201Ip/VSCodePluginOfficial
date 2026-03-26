@@ -38,13 +38,42 @@ A powerful PowerToys Run plugin for quickly opening VS Code projects and managin
 
 ## 📦 Installation
 
-### Option 1: Build from Source
+### ⭐ Recommended: Universal Installer
 
-See [Building from Source](#building-from-source) section below.
+The universal installer works on any Windows system (fresh or configured) and automatically:
 
-### Quick Installation Script
+- ✅ Detects your system architecture (x64/ARM64)
+- ✅ Checks and installs PowerToys if missing (with your permission)
+- ✅ Tries to download pre-built release first (fastest option)
+- ✅ Falls back to building from source if needed
+- ✅ Installs .NET 9.0 SDK automatically when building
+- ✅ Installs the plugin and restarts PowerToys
 
-Use the provided PowerShell script for automated installation:
+**Run the installer:**
+
+```powershell
+.\install.ps1
+```
+
+**Optional parameters:**
+
+```powershell
+# Force building from source (skip download)
+.\install.ps1 -ForceBuild
+
+# Skip PowerToys installation check
+.\install.ps1 -SkipPowerToysCheck
+
+# Skip PowerToys restart after installation
+.\install.ps1 -SkipRestart
+
+# Use custom release URL
+.\install.ps1 -GitHubReleaseUrl "https://custom-url/releases/latest/download"
+```
+
+### Option 2: Quick Installation (Requires Pre-Built Files)
+
+If you've already built the plugin:
 
 ```powershell
 .\install-simple.ps1
@@ -54,6 +83,15 @@ This will:
 - Stop PowerToys
 - Copy plugin files to the correct location
 - Provide instructions to restart PowerToys
+
+### Option 3: Manual Installation
+
+1. Build the plugin (see [Building from Source](#building-from-source))
+2. Copy all files from `bin\{Platform}\Release\net9.0-windows\` to:
+   ```
+   %LOCALAPPDATA%\Microsoft\PowerToys\PowerToys Run\Plugins\VSCode\
+   ```
+3. Restart PowerToys
 
 ## 🚀 Usage
 
