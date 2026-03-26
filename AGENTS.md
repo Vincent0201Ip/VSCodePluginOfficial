@@ -70,7 +70,6 @@ dotnet build -c Release -p:Platform=x64 -p:TreatWarningsAsErrors=true
 ```powershell
 .\install-simple.ps1    # Install plugin to PowerToys
 .\package.ps1           # Create release packages
-.\deploy-plugin.ps1     # Deploy to PowerToys directory
 ```
 
 ## Code Style Guidelines

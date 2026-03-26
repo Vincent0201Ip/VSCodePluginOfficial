@@ -395,7 +395,7 @@ public class Main : IPlugin, IContextMenu, IDisposable
                 $"Error: {ex.Message}\n\n" +
                 $"VS Code Path: {vscodePath}\n" +
                 $"Project: {projectPath}\n\n" +
-                $"Try running the debug script: debug-vscode-path.ps1",
+                $"Try installing VS Code and adding 'code' to PATH",
                 "Error Opening VS Code",
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);

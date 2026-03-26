@@ -188,14 +188,14 @@ Community.PowerToys.Run.Plugin.VSCodePluginOfficial\bin\{Platform}\Release\net9.
 **Problem**: Projects appear in search but won't open
 
 **Solutions:**
-1. Verify VS Code is installed:
-   ```powershell
-   .\debug-vscode-path.ps1
-   ```
+1. Verify VS Code is installed at one of these locations:
+   - `C:\Program Files\Microsoft VS Code\Code.exe`
+   - `C:\Program Files (x86)\Microsoft VS Code\Code.exe`
+   - `%LocalAppData%\Programs\Microsoft VS Code\Code.exe`
 2. Make sure VS Code is in your PATH:
-   ```bash
-   code --version
-   ```
+    ```bash
+    code --version
+    ```
 3. Reinstall VS Code and ensure "Add to PATH" is checked during installation
 
 ### Projects Not Found
