@@ -173,9 +173,15 @@ public class Main : IPlugin, IContextMenu, IDisposable
                 projects = new List<VSCodeProject>();
             }
             
+            // Deduplicate by path (case insensitive) - defensive check
+            var uniqueProjects = projects
+                .GroupBy(p => p.Path.ToLowerInvariant())
+                .Select(g => g.OrderByDescending(p => p.LastOpened).First())
+                .ToList();
+            
             var results = new List<Result>();
 
-            foreach (var project in projects.Where(p => 
+            foreach (var project in uniqueProjects.Where(p => 
                 p != null &&
                 (string.IsNullOrEmpty(search) ||
                 p.Name.Contains(search, StringComparison.OrdinalIgnoreCase) || 
@@ -232,9 +238,16 @@ public class Main : IPlugin, IContextMenu, IDisposable
     private List<Result> SearchSSHConnections(string search)
     {
         var connections = _sshParser.ParseConfig();
+        
+        // Deduplicate by Host (path) - case insensitive
+        var uniqueConnections = connections
+            .GroupBy(c => c.Host.ToLowerInvariant())
+            .Select(g => g.First())
+            .ToList();
+        
         var results = new List<Result>();
 
-        foreach (var connection in connections.Where(c => 
+        foreach (var connection in uniqueConnections.Where(c => 
             string.IsNullOrEmpty(search) ||
             c.Host.Contains(search, StringComparison.OrdinalIgnoreCase) || 
             (c.HostName != null && c.HostName.Contains(search, StringComparison.OrdinalIgnoreCase))))
@@ -286,7 +299,13 @@ public class Main : IPlugin, IContextMenu, IDisposable
                 projects = new List<VSCodeProject>();
             }
 
-            foreach (var project in projects.Where(p => p != null))
+            // Deduplicate by path (case insensitive) - defensive check
+            var uniqueProjects = projects
+                .GroupBy(p => p.Path.ToLowerInvariant())
+                .Select(g => g.OrderByDescending(p => p.LastOpened).First())
+                .ToList();
+
+            foreach (var project in uniqueProjects.Where(p => p != null))
             {
                 System.Diagnostics.Debug.WriteLine($"[VSCode Plugin] Adding project: {project.Name} - {project.Path}");
                 results.Add(new Result
